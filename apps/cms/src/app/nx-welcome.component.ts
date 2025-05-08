@@ -432,7 +432,7 @@ import { CommonModule } from '@angular/common';
         <div id="welcome">
           <h1>
             <span> Hello there, </span>
-            Welcome portfolio 👋
+            Welcome cms 👋
           </h1>
         </div>
         <!--  HERO  -->
@@ -741,11 +741,7 @@ import { CommonModule } from '@angular/common';
               </div>
               <p>Your Nx Cloud remote cache setup is almost complete.</p>
 
-              <a
-                href="https://cloud.nx.app/connect/BrTXoKCJFh"
-                target="_blank"
-                rel="noreferrer"
-              >
+              <a href="" target="_blank" rel="noreferrer">
                 Click here to finish
               </a>
             </div>
@@ -798,7 +794,7 @@ nx run-many -t build test lint</pre>
               </svg>
               View project details
             </summary>
-            <pre>nx show project portfolio</pre>
+            <pre>nx show project cms</pre>
           </details>
 
           <details>
