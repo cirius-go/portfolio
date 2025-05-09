@@ -1,82 +1,233 @@
-# Portfolio
+# Pulumi Angular Monorepo      - In progress
 
-<a alt="Nx logo" href="https://nx.dev" target="_blank" rel="noreferrer"><img src="https://raw.githubusercontent.com/nrwl/nx/master/images/nx-logo.png" width="45"></a>
+Pulumi Angular Monorepo is a template project, which uses pulumi as IaC for
+deployment monorepo angular purpose. It leverages nix for environment management
+and direnv for loading environment variables, providing a streamlined
+development and deployment workflow.
 
-✨ Your new, shiny [Nx workspace](https://nx.dev) is almost ready ✨.
+Here is some benefit of `direnv` and `nix`:
 
-[Learn more about this workspace setup and its capabilities](https://nx.dev/tutorials/3-angular-monorepo/1a-introduction/1-welcome?utm_source=nx_project&amp;utm_medium=readme&amp;utm_campaign=nx_projects) or run `npx nx graph` to visually explore what was created. Now, let's get you up to speed!
+- Load [12factor apps](https://12factor.net/) environment variables.
+- Create project isolated development environments.
+- Load secrets for coding stage.
+- Load secrets for deployment stage.
+- Supported multiple platforms. Ex: `(aarch64|x86_64)-darwin`,
+  `(aarch64|x86_64)-linux`,...
 
-## Finish your CI setup
+## Features
 
-[Click here to finish setting up your workspace!](https://cloud.nx.app/connect/tl4vD454O1)
+- Pulumi Integration: Utilizes Pulumi for managing cloud infrastructure.
+- Angular Monorepo: Supports multiple Angular applications within a single
+  repository.
+- Nix & Direnv: Employs nix for package management and direnv for environment
+  variable management.
+- Task Automation: Includes a Taskfile.yaml for automating common development
+  tasks.
 
+## Infrastructure
 
-## Run tasks
+### Below is a detailed breakdown of the AWS resources and their interactions
 
-To run the dev server for your app, use:
+#### 1. **AWS Resources**:
 
-```sh
-npx nx serve portfolio
+- **S3 Bucket**
+  - **Purpose**: Stores static files (HTML, CSS, JS, assets) for each monorepo
+    application.
+  - **Configuration**:
+    - Bucket ownership is set to `BucketOwnerPreferred` to ensure proper access
+      control.
+    - Public access is blocked to enforce security (`blockPublicAcls`,
+      `ignorePublicAcls`, etc.).
+    - Files are synced from the local `builtDir` (e.g., `dist/apps`) to the S3
+      bucket using the `@pulumi/synced-folder` package.
+  - **Output**: The bucket's regional domain name (e.g.,
+    `bucket.s3.region.amazonaws.com`) is used as the CloudFront origin.
+
+- **CloudFront Distribution**
+  - **Purpose**: Acts as a CDN to serve content from the S3 bucket with
+    optimizations like caching, HTTPS, and custom error handling.
+  - **Configuration**:
+    - **Origin**: The S3 bucket is configured as the origin with
+      `Origin Access Control (OAC)` for secure access.
+    - **Caching**: Uses AWS-managed cache policies (`CachePolicyId`) and
+      response headers policies (`ResponseHeadersPolicyId`).
+    - **Custom Errors**: Redirects `404` and `403` errors to `index.html` for
+      SPAs (Single Page Applications).
+    - **SSL/TLS**: Uses an ACM certificate for HTTPS (`acmCertificateArn`).
+    - **Aliases**: Maps to a custom domain (e.g., `app.example.com`).
+  - **Output**: The CloudFront distribution domain name (e.g.,
+    `d123.cloudfront.net`).
+
+- **Route 53 Record**
+  - **Purpose**: Maps the CloudFront distribution to a custom domain (e.g.,
+    `app.example.com`).
+  - **Configuration**:
+    - Uses the CloudFront distribution's domain name and hosted zone ID.
+    - Supports `A` record type with alias routing.
+  - **Output**: The DNS record ID for reference.
+
+- **ACM Certificate**
+  - **Purpose**: Provides SSL/TLS certificates for secure HTTPS connections.
+  - **Note**: The certificate must be provisioned in the `us-east-1` region
+    (required by CloudFront).
+
+#### 2. **AWS Dependencies**:
+
+- **S3 Bucket Policy**:
+  - Allows CloudFront to read objects via an IAM policy tied to the CloudFront
+    distribution's ARN.
+- **CloudFront Origin**:
+  - Uses the S3 bucket as its origin, secured via OAC.
+- **Route 53**:
+  - Points the custom domain to the CloudFront distribution.
+
+#### 3. **Pulumi**:
+
+- **Configuration**:
+  - Uses `Pulumi Config` to fetch deployment settings (e.g., `builtDir`,
+    `region`, `repos`).
+  - Supports dynamic resource naming (e.g., `util.mkResourceName`) for
+    uniqueness.
+- **Setup Functions**:
+  - Modular functions (`setupS3BucketFolder`, `setupCloudFrontDistribution`,
+    etc.) orchestrate resource creation.
+  - Dependencies are managed explicitly (e.g., `dependsOn` for synced folders).
+- **Outputs**:
+  - Exposes critical IDs (e.g., `distributionId`, `dnsRecordId`) for debugging
+    and automation.
+
+#### 4. **Local System**:
+
+- **Synced Folder**:
+  - The `@pulumi/synced-folder` package syncs the local `builtDir` (e.g.,
+    `dist/apps`) to the S3 bucket during deployment.
+  - Ensures only the owner can modify files
+    (`acl: "bucket-owner-full-control"`).
+- **Environment**:
+  - Uses `direnv` and `nix` to manage CLI tools and environment variables (e.g.,
+    `AWS_REGION`, `PULUMI_CONFIG`).
+
+Use commands inside `Taskfile.yml` to start, lint, deploy... your project.
+
+## Setup Instructions
+
+### Prequisites
+
+Install these package.
+
+- [Direnv](https://direnv.net)
+- (Optional) [Nix-Darwin](https://github.com/nix-darwin/nix-darwin) for MacOS or
+  [Nix](https://nixos.org/download/#nix-install-linux) for linux
+
+### Clone template repository
+
+```bash
+git clone https://github.com/cirius-go/pulumi-angular-monorepo your_project_name
+cd your_project_name
 ```
 
-To create a production bundle:
+### Install required packages
 
-```sh
-npx nx build portfolio
+List of required packages is defined at `nix/shells/frontend/default.nix`. You
+can use [NixOS Search](https://search.nixos.org/packages) to retrieve package
+name.
+
+This project is configured to support Nix package manager + Direnv. Whenever you
+allow `direnv` to start or reload, Nix package manager will install required
+packages if not exists.
+
+NOTE: If you don't want to use Nix. You can install required packages by
+yourself and remove these nix files and folder:
+
+- Inside `.envrc` file, remove this snippet:
+
+  ```bash
+  #!/usr/bin/env bash
+  # ...
+  # remove this block
+  if [[ $(type -t use_flake) != function ]]; then
+    # ...
+  fi
+
+  # remove this block
+  if ! has nix_direnv_version || ! nix_direnv_version 3.0.6; then
+    # ...
+  fi
+
+  # remove this line
+  use flake .#frontend --impure
+  ```
+
+- Remove `flake.nix`, `flake.lock` files and `nix` folder.
+
+### Allow direnv to load env variables and nix packages
+
+```bash
+direnv allow
+
+# To update package versions
+nix flake update
+direnv allow && direnv reload
 ```
 
-To see all available targets to run for a project, run:
+After that:
 
-```sh
-npx nx show project portfolio
+- When you `cd` to this project, direnv will try to load or install packages
+  from Nix package manager and expose environment variables defined in `.env`
+  file and Pulumi ESC to current shell.
+
+- Based on `STAGE` variable inside `.env`, the corresponding variables will be
+  retrieved from Pulumi ESC and exported to current shell.
+
+NOTE: This project is using `STAGE` value as Pulumi project's stack name (except
+`local`) to consistent across enviroments.
+
+If you develop app in multiple platforms, please reading carefully about the
+package description because some packages are only defined for specific system.
+
+### Init project and environment in Pulumi console.
+
+Use the `project name` + `stack` to init the deployment config.
+
+```bash
+# Init pulumi module
+pulumi new aws-typescript -s {your_org}/{project_name}/{stack} --dir deployment/aws
+cd ./deployment/aws && npm i
+
+# Install required packages
+npm i @aws-sdk/client-cloudfront @pulumi/synced-folder
 ```
 
-These targets are either [inferred automatically](https://nx.dev/concepts/inferred-tasks?utm_source=nx_project&utm_medium=readme&utm_campaign=nx_projects) or defined in the `project.json` or `package.json` files.
+For example, I created project & env `pulumi-angular-monorepo` with stack `dev`
+under `cirius-go` org in pulumi console. So the corresponding command will be:
 
-[More about running tasks in the docs &raquo;](https://nx.dev/features/run-tasks?utm_source=nx_project&utm_medium=readme&utm_campaign=nx_projects)
-
-## Add new projects
-
-While you could add new projects to your workspace manually, you might want to leverage [Nx plugins](https://nx.dev/concepts/nx-plugins?utm_source=nx_project&utm_medium=readme&utm_campaign=nx_projects) and their [code generation](https://nx.dev/features/generate-code?utm_source=nx_project&utm_medium=readme&utm_campaign=nx_projects) feature.
-
-Use the plugin's generator to create new projects.
-
-To generate a new application, use:
-
-```sh
-npx nx g @nx/angular:app demo
+```bash
+pulumi new aws-typescript -s cirius-go/pulumi-angular-monorepo/dev --dir deployment/aws
+cd ./deployment/aws && npm i
+npm i @aws-sdk/client-cloudfront @pulumi/synced-folder
 ```
 
-To generate a new library, use:
+You can see the example config inside `deployment/aws-example`. Which will be
+used to deploy all monorepos to AWS.
 
-```sh
-npx nx g @nx/angular:lib mylib
+### Initialize Monorepo Codebase Using NX
+
+We will use the [NX](https://nx.dev/getting-started/intro) package to initialize
+the monorepo workspace under the `workspace` folder.
+
+Example: To create an application named `your_app_name` inside the
+`your_mono_repo` workspace, run the following command:
+
+```bash
+npx create-nx-workspace@latest \
+  --preset=angular-monorepo \
+  --name=your_mono_repo \
+  --appName=your_app_name \
+  --style=scss \
+  --bundler=esbuild \
+  --standalone \
+  --routing \
+  --pm=npm \
+  --skipGit \
+  --directory workspace
 ```
-
-You can use `npx nx list` to get a list of installed plugins. Then, run `npx nx list <plugin-name>` to learn about more specific capabilities of a particular plugin. Alternatively, [install Nx Console](https://nx.dev/getting-started/editor-setup?utm_source=nx_project&utm_medium=readme&utm_campaign=nx_projects) to browse plugins and generators in your IDE.
-
-[Learn more about Nx plugins &raquo;](https://nx.dev/concepts/nx-plugins?utm_source=nx_project&utm_medium=readme&utm_campaign=nx_projects) | [Browse the plugin registry &raquo;](https://nx.dev/plugin-registry?utm_source=nx_project&utm_medium=readme&utm_campaign=nx_projects)
-
-
-[Learn more about Nx on CI](https://nx.dev/ci/intro/ci-with-nx#ready-get-started-with-your-provider?utm_source=nx_project&utm_medium=readme&utm_campaign=nx_projects)
-
-## Install Nx Console
-
-Nx Console is an editor extension that enriches your developer experience. It lets you run tasks, generate code, and improves code autocompletion in your IDE. It is available for VSCode and IntelliJ.
-
-[Install Nx Console &raquo;](https://nx.dev/getting-started/editor-setup?utm_source=nx_project&utm_medium=readme&utm_campaign=nx_projects)
-
-## Useful links
-
-Learn more:
-
-- [Learn more about this workspace setup](https://nx.dev/tutorials/3-angular-monorepo/1a-introduction/1-welcome?utm_source=nx_project&amp;utm_medium=readme&amp;utm_campaign=nx_projects)
-- [Learn about Nx on CI](https://nx.dev/ci/intro/ci-with-nx?utm_source=nx_project&utm_medium=readme&utm_campaign=nx_projects)
-- [Releasing Packages with Nx release](https://nx.dev/features/manage-releases?utm_source=nx_project&utm_medium=readme&utm_campaign=nx_projects)
-- [What are Nx plugins?](https://nx.dev/concepts/nx-plugins?utm_source=nx_project&utm_medium=readme&utm_campaign=nx_projects)
-
-And join the Nx community:
-- [Discord](https://go.nx.dev/community)
-- [Follow us on X](https://twitter.com/nxdevtools) or [LinkedIn](https://www.linkedin.com/company/nrwl)
-- [Our Youtube channel](https://www.youtube.com/@nxdevtools)
-- [Our blog](https://nx.dev/blog?utm_source=nx_project&utm_medium=readme&utm_campaign=nx_projects)
