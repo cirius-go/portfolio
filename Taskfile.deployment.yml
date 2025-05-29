@@ -1,5 +1,8 @@
 version: '3'
 tasks:
+  installDeps:ci:
+    cmds:
+      - cd ./workspace && npm ci
   build:
     desc: 'Build project'
     cmds:
