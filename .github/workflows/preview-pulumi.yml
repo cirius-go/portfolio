@@ -1,0 +1,38 @@
+name: Preview cirius-go/portfolio-frontend/dev
+on:
+  pull_request:
+    types: [opened,edited,reopened,synchronize]
+permissions:
+  contents: read
+env:
+  ESC_ACTION_CLOUD_URL: https://api.pulumi.com
+  ESC_ACTION_OIDC_ORGANZATION: cirius-go
+  ESC_ACTION_ENVIRONMENT: cirius-go/portfolio-frontend/dev
+  PULUMI_STACK_NAME: cirius-go/portfolio-frontend/dev
+  PULUMI_ACCESS_TOKEN: ${{ secrets.PULUMI_ACCESS_TOKEN }}
+  ESC_ACTION_EXPORT_ENVIRONMENT_VARIABLES: AWS_ACCESS_KEY_ID,AWS_SECRET_ACCESS_KEY,AWS_SESSION_TOKEN
+  DEPLOYMENT_WORKING_DIRECTORY: deployment/aws
+  APPS_WORKING_DIRECTORY: workspace
+jobs:
+  pulumi:
+    name: Pulumi
+    runs-on: ubuntu-latest
+    steps:
+      - name: Turnstyle
+        if: ${{ github.event_name == 'push' }}
+        uses: softprops/turnstyle@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - uses: actions/checkout@v2
+      - name: Use Node.js
+        uses: actions/setup-node@v2
+        with:
+          node-version: 22.x
+      - run: npm ci
+        working-directory: ${{ env.DEPLOYMENT_WORKING_DIRECTORY }}
+      - name: PR previews
+        uses: pulumi/actions@v3
+        with:
+          command: preview
+          stack-name: ${{ env.PULUMI_STACK_NAME }}
+          work-dir: ${{ env.DEPLOYMENT_WORKING_DIRECTORY }}

@@ -1,2 +1,4 @@
 .direnv
 .env
+.task
+.DS_Store

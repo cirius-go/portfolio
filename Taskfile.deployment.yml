@@ -1,14 +1,19 @@
 version: '3'
-vars:
-  PROJECT: cirius-go/portfolio-frontend
 tasks:
-  default:
+  installDeps:ci:
     cmds:
-      - task -l
-    silent: true
-  start:
+      - cd ./workspace && npm ci
+  build:
+    desc: 'Build project'
     cmds:
-      - cd ./workspace && npx nx run {{ .REPO | default "portfolio" }}:serve --port 4000
+      - ./scripts/build.sh {{ .CLI_ARGS }}
+    internal: true
+  build:dev:
+    desc: "Build all apps for dev"
+    cmds:
+      - task: build
+        vars:
+          CLI_ARGS: dev {{ .CLI_ARGS | default "cms,portfolio" }}
   env:edit:
     desc: 'Edit environment'
     cmds:
@@ -49,22 +54,16 @@ tasks:
       - task: env:rm
         vars:
           STAGE: dev
-  build:
-    desc: 'Build project'
-    cmds:
-      - ./scripts/build.sh {{ .CLI_ARGS }}
-  build:dev:
-    desc: 'Build dev environment'
-    cmds:
-      - task: build
-        vars:
-          CLI_ARGS: dev example-1
   deploy:
     desc: 'Deploy to AWS'
     cmds:
       - task: build:{{ .STAGE | default "dev" }}
       - pulumi up -C ./deployment/aws -s {{ .PROJECT }}/{{ .STAGE | default "dev" }}
       - task: stack:output
+  deploy:check:
+    desc: "Checking deployment permissions"
+    cmds:
+      - pulumi refresh -C ./deployment/aws -s {{ .PROJECT }}/{{ .STAGE | default "dev" }}
   stack:output:
     desc: 'Show stack outputs'
     cmds:
@@ -75,11 +74,7 @@ tasks:
       - task: deploy
         vars:
           STAGE: dev
-  check:
-    desc: "Run 'detect-secrets scan > .secrets.baseline' if needed"
+  test:github-ci:
+    desc: 'Test github CI at local'
     cmds:
-      - pre-commit run --all-files
-  fix:
-    cmds:
-      - cd ./workspace && npx nx run-many --target=lint --all --fix --parallel=3
-      - cd ./workspace && npx nx format:write --libs-and-apps
+      - act --container-architecture linux/amd64
