@@ -51,6 +51,7 @@ jobs:
           name: ${{ env.TARGET }}-${{ matrix.project }}
           path: deployment/aws/.build/${{ env.TARGET }}/${{ matrix.project }}
   deploy:
+    needs: build
     runs-on: ubuntu-latest
     env:
       TARGET: ${{ github.event.inputs.target || 'dev' }}
