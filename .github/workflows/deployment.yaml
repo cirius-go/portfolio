@@ -5,7 +5,7 @@ on:
       - main
   workflow_dispatch:
     inputs:
-      stage:
+      target:
         description: 'Target stage to deploy'
         required: true
         type: choice
@@ -13,12 +13,18 @@ on:
           - dev
           - prod
         default: dev
+      branch:
+        description: 'Branch used to deploy'
+        required: true
+        type: string
 jobs:
   deployment:
     runs-on: ubuntu-latest
     strategy:
       matrix:
         project: [cms, portfolio]
+    env:
+      TARGET: ${{ github.event.inputs.target || 'dev' }}
     defaults:
       run:
         shell: bash
@@ -42,17 +48,17 @@ jobs:
       - name: Install dependencies
         run: task installDeps:ci
       - name: Build ${{ matrix.project }}
-        run: task build:${{ github.event.inputs.stage }} -- ${{ matrix.project }}
-      - name: Configure AWS Credentials
-        uses: aws-actions/configure-aws-credentials@v4
-        with:
-          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          aws-region: ${{ secrets.AWS_REGION }}
-          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-      - uses: pulumi/actions@v6
-        with:
-          command: up
-          stack-name: cirius-go/portfolio-frontend
-          upsert: true
-        env:
-          PULUMI_ACCESS_TOKEN: ${{ secrets.PULUMI_ACCESS_TOKEN }}
+        run: task build:${{ env.TARGET }} -- ${{ matrix.project }}
+    # - name: Configure AWS Credentials
+    #   uses: aws-actions/configure-aws-credentials@v4
+    #   with:
+    #     aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+    #     aws-region: ${{ secrets.AWS_REGION }}
+    #     aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+    # - uses: pulumi/actions@v6
+    #   with:
+    #     command: up
+    #     stack-name: cirius-go/portfolio-frontend
+    #     upsert: true
+    #   env:
+    #     PULUMI_ACCESS_TOKEN: ${{ secrets.PULUMI_ACCESS_TOKEN }}
