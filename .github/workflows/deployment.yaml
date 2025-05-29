@@ -48,7 +48,7 @@ jobs:
       - name: Upload AWS artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: ${{ env.TARGET }}.${{ matrix.project }}
+          name: ${{ env.TARGET }}-${{ matrix.project }}
           path: deployment/aws/.build/${{ env.TARGET }}/${{ matrix.project }}
   deploy:
     runs-on: ubuntu-latest
@@ -65,5 +65,5 @@ jobs:
       - name: Download AWS artifacts
         uses: actions/download-artifact@v4
         with:
-          name: ${{ env.TARGET }}.${{ matrix.project }}
+          name: ${{ env.TARGET }}-${{ matrix.project }}
           path: deployment/aws/.build/${{ env.TARGET }}/${{ matrix.project }}
