@@ -1,4 +1,4 @@
-name: Deploy portfolio apps to AWS
+name: Deployment
 on:
   push:
     branches:
@@ -13,10 +13,6 @@ on:
           - dev
           - prod
         default: dev
-      branch:
-        description: 'Branch used to deploy'
-        required: true
-        type: string
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -53,7 +49,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: ${{ env.TARGET }}.${{ matrix.project }}
-          path: deployment/aws/.build/${{ matrix.project }}
+          path: deployment/aws/.build/${{ env.TARGET }}/${{ matrix.project }}
   deploy:
     runs-on: ubuntu-latest
     env:
@@ -70,18 +66,4 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           name: ${{ env.TARGET }}.${{ matrix.project }}
-          path: deployment/aws/.build/${{ matrix.project }}
-
-# - name: Configure AWS Credentials
-#   uses: aws-actions/configure-aws-credentials@v4
-#   with:
-#     aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-#     aws-region: ${{ secrets.AWS_REGION }}
-#     aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-# - uses: pulumi/actions@v6
-#   with:
-#     command: up
-#     stack-name: cirius-go/portfolio-frontend
-#     upsert: true
-#   env:
-#     PULUMI_ACCESS_TOKEN: ${{ secrets.PULUMI_ACCESS_TOKEN }}
+          path: deployment/aws/.build/${{ env.TARGET }}/${{ matrix.project }}
