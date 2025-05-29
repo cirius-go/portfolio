@@ -1,0 +1,46 @@
+version: '3'
+# required libraries
+includes:
+  vars:
+    taskfile: ./Taskfile.vars.yml
+    flatten: true
+    internal: true
+  deployment:
+    taskfile: ./Taskfile.deployment.yml
+    flatten: true
+# commands
+tasks:
+  default:
+    cmds:
+      - task -l
+    silent: true
+  check:
+    desc: "Run 'detect-secrets scan > .secrets.baseline' if needed"
+    cmds:
+      - pre-commit run --all-files
+  installDeps:
+    desc: "Install NodeJS packages"
+    cmds:
+      - cd ./workspace && npm i
+  fix:
+    desc: "Lint & Format code"
+    cmds:
+      - cd ./workspace && npx nx run-many --target=lint --all --fix --parallel=3
+      - cd ./workspace && npx nx format:write --libs-and-apps
+  start:
+    desc: "Start the dev app by specific repo"
+    cmds:
+      - cd ./workspace && npx nx run {{ .REPO | default "portfolio" }}:serve --port 4000
+    internal: true
+  start:cms:
+    desc: "Start the cms app"
+    cmds:
+      - task: start
+        vars:
+          REPO: cms
+  start:portfolio:
+    desc: "Start the portfolio app"
+    cmds:
+      - task: start
+        vars:
+          REPO: portfolio

@@ -10,14 +10,14 @@ export const appRoutes: Route[] = [
     path: 'portfolio',
     loadComponent: () =>
       import('@features/portfolio/pages/portfolio/portfolio.component').then(
-        (m) => m.PortfolioComponent,
+        (m) => m.PortfolioComponent
       ),
   },
   {
     path: 'projects',
     loadComponent: () =>
       import('@features/project/pages/projects/projects.component').then(
-        (m) => m.ProjectsComponent,
+        (m) => m.ProjectsComponent
       ),
     children: [
       {
@@ -33,7 +33,7 @@ export const appRoutes: Route[] = [
     path: '**',
     loadComponent: () =>
       import('@shared/pages/not-found/not-found.component').then(
-        (m) => m.NotFoundComponent,
+        (m) => m.NotFoundComponent
       ),
   },
 ];

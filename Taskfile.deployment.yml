@@ -1,14 +1,16 @@
 version: '3'
-vars:
-  PROJECT: cirius-go/portfolio-frontend
 tasks:
-  default:
+  build:
+    desc: 'Build project'
     cmds:
-      - task -l
-    silent: true
-  start:
+      - ./scripts/build.sh {{ .CLI_ARGS }}
+    internal: true
+  build:dev:
+    desc: "Build all apps for dev"
     cmds:
-      - cd ./workspace && npx nx run {{ .REPO | default "portfolio" }}:serve --port 4000
+      - task: build
+        vars:
+          CLI_ARGS: dev {{ .CLI_ARGS | default "cms,portfolio" }}
   env:edit:
     desc: 'Edit environment'
     cmds:
@@ -49,16 +51,6 @@ tasks:
       - task: env:rm
         vars:
           STAGE: dev
-  build:
-    desc: 'Build project'
-    cmds:
-      - ./scripts/build.sh {{ .CLI_ARGS }}
-  build:dev:
-    desc: 'Build dev environment'
-    cmds:
-      - task: build
-        vars:
-          CLI_ARGS: dev example-1
   deploy:
     desc: 'Deploy to AWS'
     cmds:
@@ -75,11 +67,7 @@ tasks:
       - task: deploy
         vars:
           STAGE: dev
-  check:
-    desc: "Run 'detect-secrets scan > .secrets.baseline' if needed"
+  test:github-ci:
+    desc: 'Test github CI at local'
     cmds:
-      - pre-commit run --all-files
-  fix:
-    cmds:
-      - cd ./workspace && npx nx run-many --target=lint --all --fix --parallel=3
-      - cd ./workspace && npx nx format:write --libs-and-apps
+      - act --container-architecture linux/amd64
