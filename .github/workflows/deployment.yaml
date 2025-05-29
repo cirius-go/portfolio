@@ -18,17 +18,17 @@ on:
         required: true
         type: string
 jobs:
-  deployment:
+  build:
     runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        project: [cms, portfolio]
     env:
       TARGET: ${{ github.event.inputs.target || 'dev' }}
     defaults:
       run:
         shell: bash
         working-directory: .
+    strategy:
+      matrix:
+        project: [cms, portfolio]
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -49,16 +49,39 @@ jobs:
         run: task installDeps:ci
       - name: Build ${{ matrix.project }}
         run: task build:${{ env.TARGET }} -- ${{ matrix.project }}
-    # - name: Configure AWS Credentials
-    #   uses: aws-actions/configure-aws-credentials@v4
-    #   with:
-    #     aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-    #     aws-region: ${{ secrets.AWS_REGION }}
-    #     aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-    # - uses: pulumi/actions@v6
-    #   with:
-    #     command: up
-    #     stack-name: cirius-go/portfolio-frontend
-    #     upsert: true
-    #   env:
-    #     PULUMI_ACCESS_TOKEN: ${{ secrets.PULUMI_ACCESS_TOKEN }}
+      - name: Upload AWS artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ env.TARGET }}.${{ matrix.project }}
+          path: deployment/aws/.build/${{ matrix.project }}
+  deploy:
+    runs-on: ubuntu-latest
+    env:
+      TARGET: ${{ github.event.inputs.target || 'dev' }}
+    strategy:
+      matrix:
+        project: [cms, portfolio]
+    defaults:
+      run:
+        shell: bash
+        working-directory: .
+    steps:
+      - name: Download AWS artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: ${{ env.TARGET }}.${{ matrix.project }}
+          path: deployment/aws/.build/${{ matrix.project }}
+
+# - name: Configure AWS Credentials
+#   uses: aws-actions/configure-aws-credentials@v4
+#   with:
+#     aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+#     aws-region: ${{ secrets.AWS_REGION }}
+#     aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+# - uses: pulumi/actions@v6
+#   with:
+#     command: up
+#     stack-name: cirius-go/portfolio-frontend
+#     upsert: true
+#   env:
+#     PULUMI_ACCESS_TOKEN: ${{ secrets.PULUMI_ACCESS_TOKEN }}
