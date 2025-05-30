@@ -1,4 +1,4 @@
-name: Preview cirius-go/portfolio-frontend/dev
+name: Preview Infra
 on:
   pull_request:
     types: [opened, edited, reopened, synchronize]
@@ -14,8 +14,8 @@ env:
   DEPLOYMENT_WORKING_DIRECTORY: deployment/aws
   APPS_WORKING_DIRECTORY: workspace
 jobs:
-  pulumi:
-    name: Pulumi
+  preview:
+    name: Preview Infra
     runs-on: ubuntu-latest
     steps:
       - name: Turnstyle
