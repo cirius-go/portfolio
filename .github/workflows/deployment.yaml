@@ -31,6 +31,11 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
+      - name: Authenticate with Pulumi Cloud
+        uses: pulumi/auth-actions@v1
+        with:
+          organization: cirius-go
+          requested-token-type: urn:pulumi:token-type:access_token:organization
       - name: Install and inject ESC environment variables
         id: esc-secrets
         uses: pulumi/esc-action@v1
