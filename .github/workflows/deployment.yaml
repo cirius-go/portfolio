@@ -34,9 +34,6 @@ jobs:
       run:
         shell: bash
         working-directory: .
-    strategy:
-      matrix:
-        project: [cms, portfolio]
     steps:
       # Turnstyle is used to prevent multiple push jobs from running at the
       # same time. We limit it to push jobs to allow PR jobs to run
@@ -80,7 +77,7 @@ jobs:
         run: npm ci
         working-directory: ${{ env.DEPLOYMENT_WORKING_DIRECTORY }}
       - name: Build ${{ matrix.project }}
-        run: task build:${{ env.TARGET }} -- ${{ matrix.project }}
+        run: task build:${{ env.TARGET }} -- cms,portfolio
       - name: Apply infrastructure update
         uses: pulumi/actions@v3
         with:
