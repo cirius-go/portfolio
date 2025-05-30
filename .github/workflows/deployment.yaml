@@ -68,7 +68,7 @@ jobs:
       - name: Install deployment dependencies
         run: npm ci
         working-directory: ${{ env.DEPLOYMENT_WORKING_DIRECTORY }}
-      - name: Build ${{ matrix.project }}
+      - name: Build
         run: task build:${{ env.TARGET }} -- cms,portfolio
       - name: Apply infrastructure update
         uses: pulumi/actions@v3

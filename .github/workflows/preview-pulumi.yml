@@ -1,4 +1,4 @@
-name: Preview cirius-go/portfolio-frontend/dev
+name: Preview Infra
 on:
   pull_request:
     types: [opened, edited, reopened, synchronize]
@@ -14,16 +14,26 @@ env:
   DEPLOYMENT_WORKING_DIRECTORY: deployment/aws
   APPS_WORKING_DIRECTORY: workspace
 jobs:
-  pulumi:
-    name: Pulumi
+  preview:
+    name: Preview Infra
     runs-on: ubuntu-latest
+    env:
+      TARGET: dev
     steps:
       - name: Turnstyle
-        if: ${{ github.event_name == 'push' }}
         uses: softprops/turnstyle@v1
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       - uses: actions/checkout@v2
+      - name: Install go-task/task to run Taskfile commands
+        uses: arduino/setup-task@v2
+      - name: Cache node modules
+        uses: actions/cache@v4
+        with:
+          path: ./workspace/node_modules
+          key: ${{ runner.os }}-npm-apps-${{ hashFiles('./workspace/package-lock.json') }}
+          restore-keys: |
+            ${{ runner.os }}-npm-apps-
       - name: Cache deployment node modules
         uses: actions/cache@v4
         with:
@@ -36,6 +46,11 @@ jobs:
           node-version: 22.x
       - run: npm ci
         working-directory: ${{ env.DEPLOYMENT_WORKING_DIRECTORY }}
+      - name: Install dependencies
+        run: npm ci
+        working-directory: ${{ env.APPS_WORKING_DIRECTORY }}
+      - name: Build
+        run: task build:${{ env.TARGET }} -- cms,portfolio
       - name: PR previews
         uses: pulumi/actions@v3
         with:
