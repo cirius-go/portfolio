@@ -17,7 +17,6 @@ env:
   ESC_ACTION_OIDC_AUTH: true
   ESC_ACTION_CLOUD_URL: https://api.pulumi.com
   ESC_ACTION_OIDC_ORGANZATION: cirius-go
-  ESC_ACTION_OIDC_REQUESTED_TOKEN_TYPE: urn:pulumi:token-type:access_token:organization
   ESC_ACTION_ENVIRONMENT: cirius-go/portfolio-frontend/dev
   ESC_ACTION_EXPORT_ENVIRONMENT_VARIABLES: AWS_ACCESS_KEY_ID,AWS_SECRET_ACCESS_KEY,AWS_SESSION_TOKEN
 permissions:
