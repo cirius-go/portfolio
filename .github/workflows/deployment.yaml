@@ -15,6 +15,7 @@ on:
         default: dev
 env:
   ESC_ACTION_OIDC_AUTH: true
+  ESC_ACTION_CLOUD_URL: https://api.pulumi.com
   ESC_ACTION_OIDC_ORGANZATION: cirius-go
   ESC_ACTION_OIDC_REQUESTED_TOKEN_TYPE: urn:pulumi:token-type:access_token:organization
   ESC_ACTION_ENVIRONMENT: cirius-go/portfolio-frontend/dev
