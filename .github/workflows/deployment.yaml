@@ -85,5 +85,5 @@ jobs:
         uses: pulumi/actions@v3
         with:
           command: up
-          stack-name: ${{ env:PULUMI_STACK_NAME }}
+          stack-name: ${{ env.PULUMI_STACK_NAME }}
           work-dir: ${{ env.DEPLOYMENT_WORKING_DIRECTORY }}
