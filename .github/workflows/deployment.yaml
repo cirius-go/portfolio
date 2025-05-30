@@ -16,7 +16,6 @@ on:
 env:
   ESC_ACTION_OIDC_AUTH: true
   ESC_ACTION_CLOUD_URL: https://api.pulumi.com
-  OIDC_ORGANIZATION: cirius-go
   ESC_ACTION_OIDC_ORGANZATION: cirius-go
   ESC_ACTION_OIDC_REQUESTED_TOKEN_TYPE: urn:pulumi:token-type:access_token:organization
   ESC_ACTION_ENVIRONMENT: cirius-go/portfolio-frontend/dev
@@ -42,6 +41,8 @@ jobs:
       - name: Fetch secrets from ESC
         id: esc-secrets
         uses: pulumi/esc-action@v1
+        with:
+          oidc-organization: cirius-go
       - name: Install go-task/task to run Taskfile commands
         uses: arduino/setup-task@v2
       - name: Setup Node.js
