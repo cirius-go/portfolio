@@ -13,8 +13,11 @@ on:
           - dev
           - prod
         default: dev
+permissions:
+  id-token: write
+  contents: read
 jobs:
-  build:
+  deploy:
     runs-on: ubuntu-latest
     env:
       TARGET: ${{ github.event.inputs.target || 'dev' }}
@@ -28,6 +31,11 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
+      - name: Install and inject ESC environment variables
+        id: esc-secrets
+        uses: pulumi/esc-action@v1
+        with:
+          environment: cirius-go/portfolio-frontend/dev
       - name: Install go-task/task to run Taskfile commands
         uses: arduino/setup-task@v2
       - name: Setup Node.js
@@ -37,34 +45,19 @@ jobs:
       - name: Cache node modules
         uses: actions/cache@v4
         with:
-          path: ~/.npm
-          key: ${{ runner.os }}-npm-${{ hashFiles('**/package-lock.json') }}
+          path: ./workspace/node_modules
+          key: ${{ runner.os }}-npm-apps-${{ hashFiles('./workspace/package-lock.json') }}
           restore-keys: |
-            ${{ runner.os }}-npm-
+            ${{ runner.os }}-npm-apps-
+      - name: Cache deployment node modules
+        uses: actions/cache@v4
+        with:
+          path: ./deployment/aws/node_modules
+          key: ${{ runner.os }}-npm-deployment-${{ hashFiles('./deployment/aws/package-lock.json') }}
+          restore-keys: ${{ runner.os }}-npm-deployment-
       - name: Install dependencies
-        run: task installDeps:ci
+        run: cd workspace && npm ci
+      - name: Install deployment dependencies
+        run: cd deployment/aws && npm ci
       - name: Build ${{ matrix.project }}
         run: task build:${{ env.TARGET }} -- ${{ matrix.project }}
-      - name: Upload AWS artifacts
-        uses: actions/upload-artifact@v4
-        with:
-          name: ${{ env.TARGET }}-${{ matrix.project }}
-          path: deployment/aws/.build/${{ env.TARGET }}/${{ matrix.project }}
-  deploy:
-    needs: build
-    runs-on: ubuntu-latest
-    env:
-      TARGET: ${{ github.event.inputs.target || 'dev' }}
-    strategy:
-      matrix:
-        project: [cms, portfolio]
-    defaults:
-      run:
-        shell: bash
-        working-directory: .
-    steps:
-      - name: Download AWS artifacts
-        uses: actions/download-artifact@v4
-        with:
-          name: ${{ env.TARGET }}-${{ matrix.project }}
-          path: deployment/aws/.build/${{ env.TARGET }}/${{ matrix.project }}

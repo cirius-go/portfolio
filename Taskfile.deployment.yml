@@ -60,6 +60,10 @@ tasks:
       - task: build:{{ .STAGE | default "dev" }}
       - pulumi up -C ./deployment/aws -s {{ .PROJECT }}/{{ .STAGE | default "dev" }}
       - task: stack:output
+  deploy:check:
+    desc: "Checking deployment permissions"
+    cmds:
+      - pulumi refresh -C ./deployment/aws -s {{ .PROJECT }}/{{ .STAGE | default "dev" }}
   stack:output:
     desc: 'Show stack outputs'
     cmds:
