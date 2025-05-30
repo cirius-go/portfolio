@@ -35,9 +35,6 @@ jobs:
         shell: bash
         working-directory: .
     steps:
-      # Turnstyle is used to prevent multiple push jobs from running at the
-      # same time. We limit it to push jobs to allow PR jobs to run
-      # concurrently.
       - name: Turnstyle
         if: ${{ github.event_name == 'push' }}
         uses: softprops/turnstyle@v1
@@ -45,11 +42,6 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       - name: Checkout code
         uses: actions/checkout@v4
-      # - name: Fetch secrets from ESC
-      #   id: esc-secrets
-      #   uses: pulumi/esc-action@v1
-      #   with:
-      #     oidc-organization: cirius-go
       - name: Install go-task/task to run Taskfile commands
         uses: arduino/setup-task@v2
       - name: Setup Node.js

@@ -1,7 +1,9 @@
 name: Preview cirius-go/portfolio-frontend/dev
 on:
   pull_request:
-    types: [opened,edited,reopened,synchronize]
+    types: [opened, edited, reopened, synchronize]
+permissions:
+  contents: read
 env:
   ESC_ACTION_CLOUD_URL: https://api.pulumi.com
   ESC_ACTION_OIDC_ORGANZATION: cirius-go
@@ -22,6 +24,12 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       - uses: actions/checkout@v2
+      - name: Cache deployment node modules
+        uses: actions/cache@v4
+        with:
+          path: ./deployment/aws/node_modules
+          key: ${{ runner.os }}-npm-deployment-${{ hashFiles('./deployment/aws/package-lock.json') }}
+          restore-keys: ${{ runner.os }}-npm-deployment-
       - name: Use Node.js
         uses: actions/setup-node@v2
         with:
