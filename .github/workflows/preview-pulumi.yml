@@ -36,6 +36,8 @@ jobs:
           node-version: 22.x
       - run: npm ci
         working-directory: ${{ env.DEPLOYMENT_WORKING_DIRECTORY }}
+      - name: Build ${{ matrix.project }}
+        run: task build:${{ env.TARGET }} -- cms,portfolio
       - name: PR previews
         uses: pulumi/actions@v3
         with:
